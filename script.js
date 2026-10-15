@@ -24,8 +24,8 @@ function hud(i){
 function say(s,x,y,col='#fff'){texts.push({s,x,y,t:1,col})}
 
 function damage(i,d){
-  const p=P[i];p.hp=Math.max(0,p.hp-d);p.flash=.15;say('-'+d,p.x,p.y-R-18,'#ff6b6b');
-  if(i===0&&!p.evo&&p.hp>0&&p.hp<=100){p.evo=true;p.img='ai_evo';say('진화!',p.x,p.y-R-40,'#ffd54a')}
+  const p=P[i];p.hp=Math.max(0,p.hp-d);p.flash=.15;say('-'+d,p.x,p.y-R-18,'#d00000');
+  if(i===0&&!p.evo&&p.hp>0&&p.hp<=100){p.evo=true;p.img='ai_evo';say('진화!',p.x,p.y-R-40,'#b8860b')}
   hud(i);
   if(p.hp<=0){over=true;document.getElementById('msg').textContent=P[1-i].name+' 승리!';document.getElementById('over').hidden=false}
 }
@@ -61,7 +61,7 @@ function skill(i){
   }else{
     
     if(punch(1)&&Math.random()<COMBO_CHANCE){
-      say('우다다!',p.x,p.y-R-40,'#ffd54a');
+      say('우다다!',p.x,p.y-R-40,'#b8860b');
       const n=3+Math.floor(Math.random()*3);
       for(let k=1;k<=n;k++)setTimeout(()=>{if(!over)punch(1)},k*130);
     }
@@ -106,7 +106,7 @@ function drawFist(f){
 }
 function draw(){
   g.clearRect(0,0,W,W);
-  g.strokeStyle='#ffffff14';g.lineWidth=1;
+  g.strokeStyle='#00000014';g.lineWidth=1;
   for(let k=50;k<W;k+=50){g.beginPath();g.moveTo(k,0);g.lineTo(k,W);g.moveTo(0,k);g.lineTo(W,k);g.stroke()}
   P.forEach(p=>{
     g.save();g.beginPath();g.arc(p.x,p.y,R,0,7);g.clip();
@@ -116,11 +116,11 @@ function draw(){
     g.strokeStyle=p.color;g.lineWidth=4;g.beginPath();g.arc(p.x,p.y,R,0,7);g.stroke();
     g.fillStyle='#111';g.fillRect(p.x-30,p.y-R-14,60,7);
     g.fillStyle=p.color;g.fillRect(p.x-30,p.y-R-14,60*p.hp/p.max,7);
-    g.fillStyle='#fff';g.font='13px Jua, sans-serif';g.textAlign='center';g.fillText(p.hp,p.x,p.y+R+16);
+    g.fillStyle='#111';g.font='13px Malgun Gothic, sans-serif';g.textAlign='center';g.fillText(p.hp,p.x,p.y+R+16);
   });
   shots.forEach(s=>s.t==='curry'?drawCurry(s):drawPoop(s));
   fists.forEach(drawFist);
-  texts.forEach(t=>{g.globalAlpha=Math.max(0,t.t);g.fillStyle=t.col;g.font='bold 18px Jua, sans-serif';g.textAlign='center';g.fillText(t.s,t.x,t.y)});
+  texts.forEach(t=>{g.globalAlpha=Math.max(0,t.t);g.fillStyle=t.col;g.font='bold 18px Malgun Gothic, sans-serif';g.textAlign='center';g.fillText(t.s,t.x,t.y)});
   g.globalAlpha=1;
 }
 function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;if(!over)update(dt);draw();requestAnimationFrame(loop)}
