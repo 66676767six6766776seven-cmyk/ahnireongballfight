@@ -1,4 +1,4 @@
-const SPEED=170,W=600,R=30,CURRY_DMG=15,CURRY_DASH=30,POOP_DMG=50,PUNCH_DMG=50,PUNCH_RANGE=90,COMBO_CHANCE=0.4;
+const SKILL_INTERVAL=5,SPEED=170,W=600,R=30,CURRY_DMG=15,CURRY_DASH=30,POOP_DMG=50,PUNCH_DMG=50,PUNCH_RANGE=90,COMBO_CHANCE=0.4;
 const cv=document.getElementById('c'),g=cv.getContext('2d');
 const imgs={};['ai_base','ai_evo','bonjun'].forEach(n=>{const i=new Image();i.src=n+'.jpg';imgs[n]=i});
 let P,shots,fists,texts,over,keys={},last=performance.now();
@@ -7,8 +7,8 @@ const rnd=(a,b)=>a+Math.random()*(b-a);
 function init(){
   let a,b;
   do{a={x:rnd(R,W-R),y:rnd(R,W-R)};b={x:rnd(R,W-R),y:rnd(R,W-R)}}while(Math.hypot(a.x-b.x,a.y-b.y)<200);
-  P=[{name:'안이령',img:'ai_base',evo:false,color:'#e0a030',cd:0,...a},
-     {name:'구본준',img:'bonjun',evo:false,color:'#5fb4e8',cd:0,...b}];
+  P=[{name:'안이령',img:'ai_base',evo:false,color:'#e0a030',cd:SKILL_INTERVAL,...a},
+     {name:'구본준',img:'bonjun',evo:false,color:'#5fb4e8',cd:SKILL_INTERVAL,...b}];
   P.forEach(p=>{p.hp=300;p.max=300;p.dash=0;p.da=0;const d=rnd(.3,1.2)+Math.floor(Math.random()*4)*Math.PI/2;p.vx=Math.cos(d)*SPEED;p.vy=Math.sin(d)*SPEED});
   shots=[];fists=[];texts=[];over=false;
   document.getElementById('over').hidden=true;
@@ -49,17 +49,17 @@ function punch(i){
   return false;
 }
 function skill(i){
-  if(over)return;const p=P[i],o=P[1-i];if(p.cd>0)return;
+  if(over)return;const p=P[i],o=P[1-i];
   const a=Math.atan2(o.y-p.y,o.x-p.x);
   if(i===0&&!p.evo){
     shots.push({x:p.x,y:p.y,vx:Math.cos(a)*430,vy:Math.sin(a)*430,dmg:CURRY_DMG,t:'curry',o:0,r:0});
-    p.dash=CURRY_DASH;p.da=a;p.cd=.7;
+    p.dash=CURRY_DASH;p.da=a;
   }else if(i===0){
     for(let k=0;k<8;k++){const b=k*Math.PI/4;
       shots.push({x:p.x,y:p.y,vx:Math.cos(b)*380,vy:Math.sin(b)*380,dmg:POOP_DMG,t:'poop',o:0,r:0})}
-    p.cd=1.2;
+    
   }else{
-    p.cd=.5;
+    
     if(punch(1)&&Math.random()<COMBO_CHANCE){
       say('우다다!',p.x,p.y-R-40,'#ffd54a');
       const n=3+Math.floor(Math.random()*3);
@@ -71,6 +71,8 @@ function skill(i){
 function update(dt){
   P.forEach((p,i)=>{
     p.cd-=dt;p.flash=(p.flash||0)-dt;
+    if(p.cd<=0){p.cd+=SKILL_INTERVAL;skill(i)}
+    document.querySelectorAll('.sk')[i].textContent='스킬 '+Math.max(0,p.cd).toFixed(1)+'초';
     p.x+=p.vx*dt;p.y+=p.vy*dt;
     if(p.dash>0){const s=Math.min(p.dash,500*dt);p.x+=Math.cos(p.da)*s;p.y+=Math.sin(p.da)*s;p.dash-=s}
     if(p.x<R){p.x=R;p.vx=Math.abs(p.vx)}else if(p.x>W-R){p.x=W-R;p.vx=-Math.abs(p.vx)}
@@ -123,13 +125,6 @@ function draw(){
 }
 function loop(now){const dt=Math.min(.05,(now-last)/1000);last=now;if(!over)update(dt);draw();requestAnimationFrame(loop)}
 
-addEventListener('keydown',e=>{
-  const k=e.key.length===1?e.key.toLowerCase():e.key;keys[k]=true;
-  if(k.startsWith('Arrow')||k===' ')e.preventDefault();
-  if(k==='f'&&!e.repeat)skill(0);
-  if(k==='Enter'&&!e.repeat&&document.activeElement.tagName!=='BUTTON')skill(1);
-});
-addEventListener('keyup',e=>{keys[e.key.length===1?e.key.toLowerCase():e.key]=false});
-document.querySelectorAll('.sk').forEach((b,i)=>b.addEventListener('pointerdown',e=>{e.preventDefault();skill(i)}));
+document.querySelectorAll('.sk').forEach(b=>b.disabled=true);
 document.getElementById('again').onclick=init;
 init();requestAnimationFrame(loop);
