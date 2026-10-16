@@ -1,8 +1,8 @@
 const W=600,R=30,BASE=170,SPEEDS=[BASE*1.3,BASE*.7],INTERVALS=[3,4];
-const CURRY_DMG=15,CURRY_DASH=30,POOP_DMG=50,PUNCH_DMG=50,PUNCH_RANGE=90,COMBO_CHANCE=.4,PENCIL_DMG=50,PENCIL_CHANCE=.2,BEAM_W=40;
+const CURRY_DMG=15,CURRY_DASH=30,POOP_DMG=50,PUNCH_DMG=50,PUNCH_RANGE=90,COMBO_CHANCE=.4,PENCIL_DMG=50,PENCIL_CHANCE=.2,BEAM_W=40,HOMING_CHANCE=.2,HOMING_COUNT=10,HOMING_HIT=.7,HOMING_DMG=15,HOMING_BONUS=30;
 const cv=document.getElementById('c'),g=cv.getContext('2d');
 const imgs={};['ai_base.jpg','ai_evo.jpg','bonjun.jpg','fist.png','curry.png','pencil.png'].forEach(n=>{const i=new Image();i.src=n;imgs[n.split('.')[0]]=i});
-let P,shots,fists,beams,texts,over,started=false,last=performance.now();
+let P,shots,fists,beams,pens,texts,over,started=false,last=performance.now();
 const rnd=(a,b)=>a+Math.random()*(b-a);
 
 function hpColor(hp,max){const r=hp/max;return r>.75?'#2db34a':r>.5?'#f08a00':r>.25?'#f2d600':'#e02020'}
@@ -12,7 +12,7 @@ function init(){
   P=[{name:'안이령',img:'ai_base',evo:false,...a},{name:'구본준',img:'bonjun',evo:false,...b}];
   P.forEach((p,i)=>{p.hp=300;p.max=300;p.dash=0;p.da=0;p.cd=INTERVALS[i];
     const d=rnd(.3,1.2)+Math.floor(Math.random()*4)*Math.PI/2;p.vx=Math.cos(d)*SPEEDS[i];p.vy=Math.sin(d)*SPEEDS[i]});
-  shots=[];fists=[];beams=[];texts=[];over=false;
+  shots=[];fists=[];beams=[];pens=[];texts=[];over=false;
   document.getElementById('over').hidden=true;
   P.forEach((_,i)=>hud(i));
 }
@@ -57,6 +57,15 @@ function pencil(){
   const p=P[1],o=P[0];beams.push({x:p.x,y:p.y,t:.6});impact();
   if(Math.abs(o.x-p.x)<=BEAM_W/2+R||Math.abs(o.y-p.y)<=BEAM_W/2+R)damage(0,PENCIL_DMG);
 }
+function homing(){
+  const p=P[1],batch={total:HOMING_COUNT,done:0,hits:0};impact();
+  for(let k=0;k<HOMING_COUNT;k++)pens.push({x:p.x,y:p.y,a:rnd(0,Math.PI*2),delay:k*.08,t:0,hit:Math.random()<HOMING_HIT,batch});
+}
+function resolve(s,hit){
+  if(s.done||over)return;s.done=true;const b=s.batch;b.done++;
+  if(hit){b.hits++;damage(0,HOMING_DMG)}
+  if(b.done===b.total&&b.hits===b.total&&!over){say('전부 명중!',P[0].x,P[0].y-R-40,'#b8860b');damage(0,HOMING_BONUS)}
+}
 function skill(i){
   if(over)return;const p=P[i],o=P[1-i];
   const a=Math.atan2(o.y-p.y,o.x-p.x);
@@ -66,9 +75,7 @@ function skill(i){
   }else if(i===0){
     for(let k=0;k<8;k++){const b=k*Math.PI/4;
       shots.push({x:p.x,y:p.y,vx:Math.cos(b)*380,vy:Math.sin(b)*380,dmg:POOP_DMG,t:'poop',r:0})}
-  }else if(Math.random()<PENCIL_CHANCE){
-    pencil();
-  }else if(punch()&&Math.random()<COMBO_CHANCE){
+  }else if((rr=>rr<PENCIL_CHANCE?(pencil(),0):rr<PENCIL_CHANCE+HOMING_CHANCE?(homing(),0):1)(Math.random())&&punch()&&Math.random()<COMBO_CHANCE){
     const n=3+Math.floor(Math.random()*3);
     for(let k=1;k<=n;k++)setTimeout(()=>{if(!over)punch()},k*130);
   }
@@ -86,6 +93,16 @@ function update(dt){
   shots.forEach(s=>{s.x+=s.vx*dt;s.y+=s.vy*dt;s.r+=dt*10;
     if(!s.dead&&Math.hypot(P[1].x-s.x,P[1].y-s.y)<R+12){s.dead=true;damage(1,s.dmg)}});
   shots=shots.filter(s=>!s.dead&&s.x>-40&&s.x<W+40&&s.y>-40&&s.y<W+40);
+  pens.forEach(s=>{
+    if(s.done)return;
+    if(s.delay>0){s.delay-=dt;s.x=P[1].x;s.y=P[1].y;return}
+    s.t+=dt;const o=P[0],dist=Math.hypot(o.x-s.x,o.y-s.y);
+    if(s.hit||dist>110){let d=Math.atan2(o.y-s.y,o.x-s.x)-s.a;d=Math.atan2(Math.sin(d),Math.cos(d));s.a+=Math.max(-8*dt,Math.min(8*dt,d))}
+    s.x+=Math.cos(s.a)*340*dt;s.y+=Math.sin(s.a)*340*dt;
+    if(s.hit&&(dist<R+6||s.t>2.5))resolve(s,true);
+    else if(!s.hit&&s.t>2)resolve(s,false);
+  });
+  pens=pens.filter(s=>!s.done);
   fists.forEach(f=>f.t-=dt);fists=fists.filter(f=>f.t>0);
   beams.forEach(b=>b.t-=dt);beams=beams.filter(b=>b.t>0);
   texts.forEach(t=>{t.t-=dt;t.y-=25*dt});texts=texts.filter(t=>t.t>0);
@@ -131,6 +148,7 @@ function draw(){
   });
   shots.forEach(s=>s.t==='curry'?drawCurry(s):drawPoop(s));
   fists.forEach(drawFist);
+  if(ok(imgs.pencil))pens.forEach(s=>{if(s.delay>0)return;g.save();g.translate(s.x,s.y);g.rotate(s.a+Math.PI/2);g.drawImage(imgs.pencil,-4,-16,8,32);g.restore()});
   texts.forEach(t=>{g.globalAlpha=Math.max(0,t.t);g.fillStyle=t.col;g.font='bold 18px Malgun Gothic, sans-serif';g.textAlign='center';g.fillText(t.s,t.x,t.y)});
   g.globalAlpha=1;
 }
