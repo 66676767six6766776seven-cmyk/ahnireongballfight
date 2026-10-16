@@ -1,5 +1,5 @@
 const W=600,R=30,BASE=170,SPEEDS=[BASE*1.3,BASE*.7],INTERVALS=[3,4];
-const CURRY_DMG=15,CURRY_DASH=30,POOP_DMG=50,PUNCH_DMG=50,PUNCH_RANGE=90,COMBO_CHANCE=.4,PENCIL_DMG=50,PENCIL_CHANCE=.2,BEAM_W=40,HOMING_CHANCE=.2,HOMING_COUNT=10,HOMING_HIT=.7,HOMING_DMG=15,HOMING_BONUS=30;
+const CURRY_DMG=15,CURRY_DASH=30,POOP_DMG=50,PUNCH_DMG=50,PUNCH_RANGE=180,GIANT_CHANCE=.15,GIANT_DMG=100,GIANT_RANGE=420,GIANT_TRAVEL=520,POOP_TIME=6,COMBO_CHANCE=.4,PENCIL_DMG=50,PENCIL_CHANCE=.2,BEAM_W=40,HOMING_CHANCE=.2,HOMING_COUNT=10,HOMING_HIT=.7,HOMING_DMG=15,HOMING_BONUS=30;
 const cv=document.getElementById('c'),g=cv.getContext('2d');
 const imgs={};['ai_base.jpg','ai_evo.jpg','bonjun.jpg','fist.png','curry.png','pencil.png'].forEach(n=>{const i=new Image();i.src=n;imgs[n.split('.')[0]]=i});
 let P,shots,fists,beams,pens,texts,over,started=false,last=performance.now();
@@ -12,7 +12,7 @@ function init(){
   P=[{name:'안이령',img:'ai_base',evo:false,...a},{name:'구본준',img:'bonjun',evo:false,...b}];
   P.forEach((p,i)=>{p.hp=300;p.max=300;p.dash=0;p.da=0;p.cd=INTERVALS[i];
     const d=rnd(.3,1.2)+Math.floor(Math.random()*4)*Math.PI/2;p.vx=Math.cos(d)*SPEEDS[i];p.vy=Math.sin(d)*SPEEDS[i]});
-  shots=[];fists=[];beams=[];pens=[];texts=[];over=false;
+  shots=[];fists=[];beams=[];pens=[];texts=[];over=false;document.getElementById('giant').hidden=true;
   document.getElementById('over').hidden=true;
   P.forEach((_,i)=>hud(i));
 }
@@ -47,6 +47,15 @@ function impact(){
   qg.gain.setValueAtTime(.35,t);qg.gain.exponentialRampToValueAtTime(.001,t+.12);q.connect(qg).connect(m);q.start(t);q.stop(t+.14);}catch(e){}
 }
 
+function giantPunch(){
+  const p=P[1],o=P[0],a=Math.atan2(o.y-p.y,o.x-p.x),k=document.getElementById('arena').clientWidth/W,el=document.getElementById('giant');
+  el.hidden=false;el.style.width=el.style.height=(100*k)+'px';el.style.left=(p.x*k)+'px';el.style.top=(p.y*k)+'px';
+  const end=`translate(calc(-50% + ${Math.cos(a)*GIANT_TRAVEL*k}px),calc(-50% + ${Math.sin(a)*GIANT_TRAVEL*k}px)) scale(3.8)`;
+  const an=el.animate([{transform:'translate(-50%,-50%) scale(.45)',opacity:1},{transform:end,opacity:1,offset:.75},{transform:end,opacity:0}],{duration:900,easing:'ease-out'});
+  an.onfinish=()=>{el.hidden=true};
+  say('거대 주먹!',p.x,p.y-R-30,'#b8860b');impact();
+  setTimeout(()=>{if(over)return;impact();if(Math.hypot(o.x-p.x,o.y-p.y)<=GIANT_RANGE)damage(0,GIANT_DMG)},250);
+}
 function punch(){
   const p=P[1],o=P[0],a=Math.atan2(o.y-p.y,o.x-p.x);
   fists.push({a,t:.2});impact();
@@ -74,8 +83,8 @@ function skill(i){
     p.dash=CURRY_DASH;p.da=a;
   }else if(i===0){
     for(let k=0;k<8;k++){const b=k*Math.PI/4;
-      shots.push({x:p.x,y:p.y,vx:Math.cos(b)*380,vy:Math.sin(b)*380,dmg:POOP_DMG,t:'poop',r:0})}
-  }else if((rr=>rr<PENCIL_CHANCE?(pencil(),0):rr<PENCIL_CHANCE+HOMING_CHANCE?(homing(),0):1)(Math.random())&&punch()&&Math.random()<COMBO_CHANCE){
+      shots.push({x:p.x,y:p.y,vx:Math.cos(b)*380,vy:Math.sin(b)*380,dmg:POOP_DMG,t:'poop',r:0,life:POOP_TIME})}
+  }else if((rr=>rr<PENCIL_CHANCE?(pencil(),0):rr<PENCIL_CHANCE+HOMING_CHANCE?(homing(),0):1)(Math.random())&&(Math.random()<GIANT_CHANCE?(giantPunch(),false):punch())&&Math.random()<COMBO_CHANCE){
     const n=3+Math.floor(Math.random()*3);
     for(let k=1;k<=n;k++)setTimeout(()=>{if(!over)punch()},k*130);
   }
@@ -91,8 +100,11 @@ function update(dt){
     if(p.y<R){p.y=R;p.vy=Math.abs(p.vy)}else if(p.y>W-R){p.y=W-R;p.vy=-Math.abs(p.vy)}
   });
   shots.forEach(s=>{s.x+=s.vx*dt;s.y+=s.vy*dt;s.r+=dt*10;
+    if(s.t==='poop'){s.life-=dt;
+      if(s.x<12){s.x=12;s.vx=Math.abs(s.vx)}else if(s.x>W-12){s.x=W-12;s.vx=-Math.abs(s.vx)}
+      if(s.y<12){s.y=12;s.vy=Math.abs(s.vy)}else if(s.y>W-12){s.y=W-12;s.vy=-Math.abs(s.vy)}}
     if(!s.dead&&Math.hypot(P[1].x-s.x,P[1].y-s.y)<R+12){s.dead=true;damage(1,s.dmg)}});
-  shots=shots.filter(s=>!s.dead&&s.x>-40&&s.x<W+40&&s.y>-40&&s.y<W+40);
+  shots=shots.filter(s=>!s.dead&&(s.t==='poop'?s.life>0:(s.x>-40&&s.x<W+40&&s.y>-40&&s.y<W+40)));
   pens.forEach(s=>{
     if(s.done)return;
     if(s.delay>0){s.delay-=dt;s.x=P[1].x;s.y=P[1].y;return}
