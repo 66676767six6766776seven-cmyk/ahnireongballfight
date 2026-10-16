@@ -15,3 +15,10 @@ button:focus-visible{outline:3px solid #888;outline-offset:2px}
 .hp{font-size:clamp(11px,1.6vw,15px);font-variant-numeric:tabular-nums}
 #giant{position:absolute;z-index:5;pointer-events:none;object-fit:contain;transform:translate(-50%,-50%) scale(.45)}
 #giant[hidden]{display:none}
+.sel{position:relative;width:100%}
+.selbtn{width:100%;padding:6px 4px;font-size:clamp(11px,1.6vw,14px)}
+.list{position:absolute;left:50%;transform:translateX(-50%);top:100%;margin-top:2px;min-width:130px;max-height:110px;overflow-y:auto;background:#fff;border:2px solid #111;z-index:20}
+.list[hidden]{display:none}
+.list button{display:block;width:100%;background:#fff;color:#111;border:0;border-bottom:1px solid #ccc;padding:8px;text-align:left;font-size:14px}
+.list button:hover{background:#111;color:#fff}
+.magic{position:absolute;left:50%;top:50%;z-index:3;pointer-events:none;transform:translate(-50%,-50%)}
