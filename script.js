@@ -1,5 +1,5 @@
 const W=600,R=30,BASE=170,SPEEDS=[BASE*1.3,BASE*.7],INTERVALS=[3,4];
-const CURRY_DMG=15,CURRY_DASH=30,POOP_DMG=50,PUNCH_DMG=50,PUNCH_RANGE=180,GIANT_CHANCE=.15,GIANT_DMG=100,GIANT_RANGE=420,GIANT_TRAVEL=520,POOP_TIME=6,COMBO_CHANCE=.4,PENCIL_DMG=50,PENCIL_CHANCE=.2,BEAM_W=40,HOMING_CHANCE=.2,HOMING_COUNT=10,HOMING_HIT=.7,HOMING_DMG=15,HOMING_BONUS=30;
+const CURRY_DMG=30,CURRY_DASH=90,REGEN=2,POOP_DMG=50,PUNCH_DMG=50,PUNCH_RANGE=180,GIANT_CHANCE=.15,GIANT_DMG=100,GIANT_RANGE=420,GIANT_TRAVEL=520,POOP_TIME=6,COMBO_CHANCE=.4,PENCIL_DMG=50,PENCIL_CHANCE=.2,BEAM_W=40,HOMING_CHANCE=.2,HOMING_COUNT=10,HOMING_HIT=.7,HOMING_DMG=15,HOMING_BONUS=30;
 const cv=document.getElementById('c'),g=cv.getContext('2d');
 const imgs={};['ai_base.jpg','ai_evo.jpg','bonjun.jpg','fist.png','curry.png','pencil.png'].forEach(n=>{const i=new Image();i.src=n;imgs[n.split('.')[0]]=i});
 let P,shots,fists,beams,pens,texts,over,started=false,last=performance.now();
@@ -93,6 +93,7 @@ function skill(i){
 function update(dt){
   P.forEach((p,i)=>{
     p.cd-=dt;p.flash=(p.flash||0)-dt;
+    if(i===0&&p.evo&&p.hp>0&&p.hp<p.max){p.reg=(p.reg||0)+dt;if(p.reg>=1){p.reg-=1;p.hp=Math.min(p.max,p.hp+REGEN);hud(0)}}
     if(p.cd<=0){p.cd+=INTERVALS[i];skill(i)}
     p.x+=p.vx*dt;p.y+=p.vy*dt;
     if(p.dash>0){const s=Math.min(p.dash,500*dt);p.x+=Math.cos(p.da)*s;p.y+=Math.sin(p.da)*s;p.dash-=s}
