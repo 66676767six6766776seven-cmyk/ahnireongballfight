@@ -7,16 +7,13 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<main>
+<main id="wrap">
+  <article class="pf" id="p0"><img class="av" alt=""><b class="nm"></b><div class="bar"><i></i></div><span class="hp"></span></article>
   <div id="arena"><canvas id="c" width="600" height="600"></canvas>
-    <div id="over" hidden><p id="msg"></p><button id="again">다시 시작</button></div>
+    <div id="start" class="ov"><button id="go">시작</button></div>
+    <div id="over" class="ov" hidden><p id="msg"></p><button id="again">다시 시작</button></div>
   </div>
-  <section id="profiles">
-    <article class="card" id="p0"><img class="av" alt=""><div class="info"><b class="nm"></b>
-      <div class="bar"><i></i></div><span class="hp"></span></div><button class="sk">스킬 (F)</button></article>
-    <article class="card" id="p1"><img class="av" alt=""><div class="info"><b class="nm"></b>
-      <div class="bar"><i></i></div><span class="hp"></span></div><button class="sk">스킬 (Enter)</button></article>
-  </section>
+  <article class="pf" id="p1"><img class="av" alt=""><b class="nm"></b><div class="bar"><i></i></div><span class="hp"></span></article>
 </main>
 <script src="script.js"></script>
 </body>
